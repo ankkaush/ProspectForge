@@ -142,6 +142,7 @@ a degraded provider, a review-queue backlog, or a GDPR erasure request.
 | [`docs/pre-public-audit.md`](docs/pre-public-audit.md) | The audit performed before this repo went public (Step 23) |
 | [`docs/deployment.md`](docs/deployment.md) | Deployment readiness audit and the live Render deployment |
 | [`docs/reusability.md`](docs/reusability.md) | Honest audit of what a second client engagement would actually reuse (Step 25) |
+| [`docs/demo.md`](docs/demo.md) | One real prospect's actual journey, ICP to CRM record, with real data at every stage (Step 26) — [published version](https://claude.ai/code/artifact/0cbd034e-ebfd-47db-94a0-e26d2ee22656) |
 
 ## Project scope
 
