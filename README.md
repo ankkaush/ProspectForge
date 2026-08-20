@@ -21,10 +21,15 @@ AI-assisted research → decision-maker discovery → contact enrichment → ded
 deterministic qualification → prioritization → human review → CRM sync
 ```
 
-Every external integration (Apollo, Anthropic, HubSpot) sits behind a port/adapter interface
-with a CSV-backed (or, for AI rationale, fully deterministic) fallback as the active default —
-so the entire pipeline runs and is fully tested with **zero API keys**. Real provider access is
-opt-in per integration, switched on by adding one environment variable, with no code change.
+Every external integration (Apollo, Anthropic, HubSpot) sits behind a port/adapter interface,
+and every stage except one has a CSV-backed (or, for AI rationale, fully deterministic)
+fallback as the active default — the full test suite (442 tests) runs with **zero API keys**.
+The one exception: account **enrichment** always calls the real Apollo API, since that specific
+endpoint is accessible on Apollo's free tier and a stand-in was never needed (see ADR-003's
+addendum) — so a full ten-stage `POST /runs` needs at minimum a free `APOLLO_API_KEY` to get
+past that one stage. Discovery and pre-filtering alone run against the bundled seed data with
+zero keys at all. Every other provider is genuinely opt-in, switched on by adding one
+environment variable, no code change.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full module map and design
 reasoning, and [`docs/data-model.md`](docs/data-model.md) for every record's fields and status
@@ -63,9 +68,11 @@ curl -X POST http://localhost:8000/runs \
   -d '{"icp_config_id": "saas-fictional-v1"}'
 ```
 
-That single request runs the entire ten-stage automated pipeline (discovery through
-prioritization) against the bundled fictional seed data and returns a full summary — no
-external API access needed for any of it.
+Without `APOLLO_API_KEY` set, this runs discovery and pre-filtering against the bundled
+fictional seed data, then stops cleanly at the enrichment stage with a clear
+`"APOLLO_API_KEY is not set"` error in the response — that's the app's fail-fast design
+working correctly, not a bug (see `docs/runbook.md`). Add a free Apollo API key
+(`app.apollo.io` → Settings → API) to `.env` to see all ten stages complete.
 
 ### Or via the CLI
 
@@ -82,10 +89,14 @@ Every CLI command is listed at the top of [`prospectforge/cli.py`](prospectforge
 ## Running the tests
 
 ```bash
-pytest                                                    # SQLite, zero setup
+python -m pytest                                          # SQLite, zero setup
 DATABASE_URL=postgresql+psycopg://prospectforge:prospectforge@localhost:5432/prospectforge \
-  pytest                                                  # against real Postgres (needs `docker compose up -d db` first)
+  python -m pytest                                         # against real Postgres (needs `docker compose up -d db` first)
 ```
+
+(`python -m pytest`, not bare `pytest` — this project has no `pyproject.toml`/`pytest.ini`
+setting `rootdir`, and `python -m` is what puts the project root on `sys.path` so `tests/
+conftest.py`'s `from app import db` resolves.)
 
 442 tests: unit tests per module, integration tests running the whole pipeline end to end
 (`tests/integration/test_full_pipeline.py`), and deliberate chaos/fault-injection tests
