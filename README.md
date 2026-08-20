@@ -141,6 +141,7 @@ a degraded provider, a review-queue backlog, or a GDPR erasure request.
 | [`docs/failure-scenario-coverage.md`](docs/failure-scenario-coverage.md) | Every named failure scenario mapped to the test that proves it (Step 21) |
 | [`docs/pre-public-audit.md`](docs/pre-public-audit.md) | The audit performed before this repo went public (Step 23) |
 | [`docs/deployment.md`](docs/deployment.md) | Deployment readiness audit and the live Render deployment |
+| [`docs/reusability.md`](docs/reusability.md) | Honest audit of what a second client engagement would actually reuse (Step 25) |
 
 ## Project scope
 
