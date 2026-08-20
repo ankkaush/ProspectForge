@@ -1,0 +1,109 @@
+# ProspectForge - ICP Config: saas-fictional-v1
+#
+# The fictional product this ICP is built for (see ADR-002 and Step 2's
+# methodology notes): a mid-market B2B SaaS workflow-automation tool that
+# integrates with Salesforce and Slack, priced around $20-50K ACV.
+#
+# Every criterion below is reasoned from one of the two bootstrapping
+# approaches Step 2 covered, since there's no real customer history to
+# learn from:
+#   - product-fit reasoning: what does the product actually require to be
+#     useful? (needs Salesforce or Slack already in place; needs a company
+#     large enough to have a real workflow-automation budget)
+#   - analogous reasoning: who do comparable workflow/integration tools
+#     typically sell to? (funded, mid-market SaaS companies - the segment
+#     those products' public case studies and G2 category filters cluster
+#     around)
+#
+# CONTAINS semantics on a list-valued Account field (tech_stack) means "at
+# least one value in the criterion overlaps with the account's list" - not
+# that every value must be present.
+
+id: saas-fictional-v1
+version: 1
+name: "Fictional Mid-Market B2B SaaS ICP"
+description: >
+  Series A-C B2B SaaS companies, 50-500 employees, US/EU, already running
+  Salesforce or Slack (product-fit: our integration only has value if one
+  of these is already in place), at a funding stage implying real budget
+  authority.
+
+tier_1_criteria:
+  - field: industry
+    operator: in
+    value: ["Computer Software", "Internet Software & Services", "SaaS"]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Industry matches our target software/SaaS segment"
+
+  - field: employee_count
+    operator: between
+    value: [50, 500]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Company size is in our target mid-market range (50-500 employees)"
+
+  - field: geography
+    operator: in
+    value: ["United States", "Canada", "United Kingdom", "Germany", "Netherlands", "Ireland", "France"]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Headquartered in a supported US/EU market"
+
+  - field: tech_stack
+    operator: contains
+    value: ["Salesforce", "Slack"]
+    phase: post_enrichment
+    category: technographic
+    description: "Already runs Salesforce or Slack - our integration requires one of these to be useful (product-fit reasoning)"
+
+  - field: funding_stage
+    operator: in
+    value: ["Series A", "Series B", "Series C"]
+    phase: post_enrichment
+    category: behavioral
+    description: "Funding stage implies budget authority for a mid-market tool (analogous reasoning from comparable products' customer base)"
+
+# Tier 2 relaxes the two post-enrichment criteria (tech stack, funding
+# stage) - these are the least certain to know and the most likely to be
+# temporarily unavailable, per Step 2's framework. A company that's
+# structurally right (industry/size/geography) but unconfirmed on
+# tech/funding is still worth pursuing, just with less initial investment.
+tier_2_criteria:
+  - field: industry
+    operator: in
+    value: ["Computer Software", "Internet Software & Services", "SaaS"]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Industry matches our target software/SaaS segment"
+
+  - field: employee_count
+    operator: between
+    value: [50, 500]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Company size is in our target mid-market range (50-500 employees)"
+
+  - field: geography
+    operator: in
+    value: ["United States", "Canada", "United Kingdom", "Germany", "Netherlands", "Ireland", "France"]
+    phase: pre_enrichment
+    category: firmographic
+    description: "Headquartered in a supported US/EU market"
+
+# Disqualifiers are explicit hard-"no"s, not the inverse of the criteria
+# above (Step 2's lesson) - a company outside the 50-500 range simply falls
+# to Tier 3, it isn't disqualified; these two are categorically different
+# kinds of "no."
+disqualifiers:
+  - field: industry
+    operator: in
+    value: ["Government Administration", "Defense & Space", "Gambling & Casinos"]
+    phase: pre_enrichment
+    description: "Regulatory/business-model exclusion - not a market we can sell into, regardless of size or fit"
+
+  - field: employee_count
+    operator: lte
+    value: 9
+    phase: pre_enrichment
+    description: "Below any realistic budget authority or procurement process for a mid-market tool - categorically too small, not merely 'outside the preferred range'"

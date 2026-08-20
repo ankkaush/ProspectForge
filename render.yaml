@@ -1,0 +1,80 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec) - the
+# Render-native deployment artifact. Render does not consume
+# docker-compose files for deployment (it builds directly from the
+# Dockerfile, or a blueprint like this one); docker-compose.yml here
+# remains purely a local-development convenience.
+#
+# `sync: false` on every secret means Render will prompt for the real
+# value in its dashboard and never stores it in this file or the repo -
+# this is how a real API key/DB URL gets into the deployed app without
+# ever being committed.
+#
+# To use: connect this repo in the Render dashboard -> "New Blueprint
+# Instance" -> Render reads this file and provisions both resources
+# below automatically.
+
+databases:
+  - name: prospectforge-db
+    databaseName: prospectforge
+    user: prospectforge
+    plan: free
+
+services:
+  - type: web
+    name: prospectforge
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      # Provisioned automatically by Render from the database above -
+      # never a manually-entered secret.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prospectforge-db
+          property: connectionString
+
+      # Required - generate a long random value yourself (e.g. `openssl
+      # rand -hex 32`), enter it in the Render dashboard. Never reuse the
+      # local dev value from .env.
+      - key: PROSPECTFORGE_API_KEY
+        sync: false
+
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+
+      # "csv" keeps every stage on its already-live default (see
+      # ADR-003's addendum) - switch any of these to "apollo" in the
+      # dashboard once real, unblocked API access exists for that
+      # endpoint, no code change required.
+      - key: DISCOVERY_PROVIDER
+        value: csv
+      - key: PEOPLE_DISCOVERY_PROVIDER
+        value: csv
+      - key: CONTACT_ENRICHMENT_PROVIDER
+        value: csv
+      - key: PEOPLE_DISCOVERY_PERSONA_ID
+        value: primary-buyer-v1
+      - key: DISCOVERY_MAX_RESULTS
+        value: "100"
+
+      # Deterministic by default (Step 15) - the qualification verdict
+      # never depends on this either way. Switch to "anthropic" in the
+      # dashboard if you want AI-phrased rationale in production.
+      - key: QUALIFICATION_RATIONALE_PROVIDER
+        value: deterministic
+
+      # All optional - the app runs correctly with these unset (each
+      # provider/integration is simply disabled until its key is added).
+      # Enter real values in the Render dashboard only if/when you want
+      # that integration live.
+      - key: APOLLO_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: HUBSPOT_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

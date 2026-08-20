@@ -1,0 +1,10 @@
+name,account_domain,email,email_confidence,seniority,linkedin_url
+Jane Doe,northstar-metrics.com,jane.doe@northstar-metrics.com,verified,vp,https://linkedin.com/in/janedoe
+Carlos Mendez,northstar-metrics.com,carlos.mendez@northstar-metrics.com,unverified,director,https://linkedin.com/in/carlosmendez
+Priya Shah,fieldglow.io,priya.shah@fieldglow.io,verified,director,https://linkedin.com/in/priyashah
+Sam Okafor,bramblecart.com,sam.okafor@bramblecart.com,verified,head,
+Ben Turner,loomwork.io,ben.turner@loomwork.io,verified,c_suite,https://linkedin.com/in/benturner
+Grace Kim,verdantanalytics.com,grace.kim@verdantanalytics,unverified,vp,
+Noah Adeyemi,circuiton.io,noah.adeyemi@circuiton.io,verified,director,https://linkedin.com/in/noahadeyemi
+Maria Rossi,haloworks.com,maria.rossi@haloworks.com,verified,c_suite,https://linkedin.com/in/mariarossi
+Ahmed Farouk,quillstack.io,,,,

@@ -1,0 +1,44 @@
+# ProspectForge - Persona Config: primary-buyer-v1
+#
+# For the fictional Salesforce/Slack-integrated workflow tool this project
+# is built around (see ADR-002, icp/configs/saas-fictional-v1.yaml): the
+# buyer is whoever owns sales/revenue tooling and workflow decisions -
+# VP/Director-level Sales, Revenue Operations, Sales Operations, or
+# Engineering leadership, since those are the functions that would
+# actually evaluate and buy a Salesforce/Slack integration.
+#
+# Both a seniority keyword AND a department keyword must match (see
+# matcher.py) - an individual contributor in Sales, or a VP of an
+# unrelated function like Legal, shouldn't count as a match.
+#
+# "Sales" was added as its own department keyword after testing against
+# the seed contact data showed "SVP of Sales" (a genuine decision-maker,
+# not just Sales Ops) was being silently excluded - only "Sales
+# Operations"/"Sales Ops" were listed originally. A real gap the tests
+# caught, not a hypothetical one.
+
+id: primary-buyer-v1
+version: 1
+name: "Primary Buyer — RevOps / Sales Ops / Engineering Leadership"
+description: >
+  Decision-makers with authority over workflow/integration purchases for
+  our fictional product: VP+/Director-level leaders in Revenue Operations,
+  Sales Operations, or Engineering.
+
+seniority_keywords:
+  - "Chief"
+  - "SVP"
+  - "VP"
+  - "Vice President"
+  - "Director"
+  - "Head of"
+
+department_keywords:
+  - "Revenue"
+  - "RevOps"
+  - "Sales"
+  - "Sales Operations"
+  - "Sales Ops"
+  - "Operations"
+  - "Engineering"
+  - "IT"

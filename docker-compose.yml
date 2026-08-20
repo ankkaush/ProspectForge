@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prospectforge
+      POSTGRES_PASSWORD: prospectforge
+      POSTGRES_DB: prospectforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - prospectforge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prospectforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional: the app running inside its own container, for a genuine
+  # local test of the exact image that would deploy (not required for
+  # day-to-day development - `uvicorn app.main:app --reload` against the
+  # `db` service above is faster to iterate with). Run with:
+  #   docker compose --profile full up
+  app:
+    build: .
+    restart: unless-stopped
+    profiles: ["full"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # db:5432, not localhost:5432 - container-to-container networking
+      # uses the service name as the hostname on Docker Compose's default
+      # network, not the host machine's localhost.
+      DATABASE_URL: postgresql+psycopg://prospectforge:prospectforge@db:5432/prospectforge
+      PROSPECTFORGE_API_KEY: ${PROSPECTFORGE_API_KEY:-local-dev-key-change-me}
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"
+
+volumes:
+  prospectforge_pgdata:
