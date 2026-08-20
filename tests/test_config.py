@@ -34,6 +34,46 @@ def test_a_present_api_key_constructs_settings_successfully(monkeypatch, tmp_pat
     assert settings.prospectforge_api_key == "a-real-looking-key"
 
 
+def test_bare_postgres_scheme_is_normalized_to_the_psycopg_driver(monkeypatch, tmp_path):
+    """Step 23's real deploy failure: Render's managed Postgres hands out
+    a plain postgres:// URL, which SQLAlchemy defaults to the psycopg2
+    dialect for - not installed in this project (only psycopg v3 /
+    psycopg-binary are). Confirmed live: ModuleNotFoundError: No module
+    named 'psycopg2', inside Alembic's env.py during the very first
+    deploy."""
+
+    monkeypatch.setenv("PROSPECTFORGE_API_KEY", "a-real-looking-key")
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@render-host:5432/dbname")
+    empty_env_file = tmp_path / ".env"
+    empty_env_file.write_text("")
+
+    settings = Settings(_env_file=str(empty_env_file))
+
+    assert settings.database_url == "postgresql+psycopg://user:pass@render-host:5432/dbname"
+
+
+def test_bare_postgresql_scheme_is_also_normalized(monkeypatch, tmp_path):
+    monkeypatch.setenv("PROSPECTFORGE_API_KEY", "a-real-looking-key")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@render-host:5432/dbname")
+    empty_env_file = tmp_path / ".env"
+    empty_env_file.write_text("")
+
+    settings = Settings(_env_file=str(empty_env_file))
+
+    assert settings.database_url == "postgresql+psycopg://user:pass@render-host:5432/dbname"
+
+
+def test_already_correct_driver_scheme_is_left_unchanged(monkeypatch, tmp_path):
+    monkeypatch.setenv("PROSPECTFORGE_API_KEY", "a-real-looking-key")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://user:pass@host:5432/dbname")
+    empty_env_file = tmp_path / ".env"
+    empty_env_file.write_text("")
+
+    settings = Settings(_env_file=str(empty_env_file))
+
+    assert settings.database_url == "postgresql+psycopg://user:pass@host:5432/dbname"
+
+
 def test_optional_provider_keys_default_to_empty_not_required(monkeypatch, tmp_path):
     """apollo_api_key/anthropic_api_key/hubspot_api_key are optional at
     the app level - the app boots fine without them; only a run that

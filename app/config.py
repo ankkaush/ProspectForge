@@ -10,6 +10,7 @@ inside a request handler.
 
 from __future__ import annotations
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,24 @@ class Settings(BaseSettings):
     # Has a sensible local-dev default, but is expected to be overridden via
     # env var in any real deployment.
     database_url: str = "postgresql+psycopg://prospectforge:prospectforge@localhost:5432/prospectforge"
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_postgres_driver(cls, value: str) -> str:
+        """Step 23's live deployment found a real gap: managed Postgres
+        providers (Render included) hand out a plain postgres:// or
+        postgresql:// URL, which SQLAlchemy defaults to the psycopg2
+        dialect for - and this project only ships psycopg (v3) /
+        psycopg-binary, not psycopg2. Rewriting the scheme here, once, at
+        the source, means every caller (app, CLI, Alembic - env.py reads
+        this same setting) gets the right driver without needing to know
+        this distinction or edit anything in the host's dashboard."""
+
+        if value.startswith("postgres://"):
+            return "postgresql+psycopg://" + value[len("postgres://") :]
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg://" + value[len("postgresql://") :]
+        return value
 
     log_level: str = "INFO"
     environment: str = "development"
