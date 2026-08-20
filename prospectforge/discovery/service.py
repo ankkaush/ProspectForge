@@ -88,6 +88,14 @@ def run_discovery(
         criteria = criteria_from_icp(icp)
         active_provider = provider or get_default_discovery_provider()
         result_cap = max_results if max_results is not None else get_settings().discovery_max_results
+        # The actual configured provider ("csv" or "apollo"), not a
+        # hardcoded "apollo" - found as a real bug at Step 26 (this
+        # audit-trail label was always "apollo" even when the active
+        # default was csv, which is the common case per ADR-003's
+        # addendum). Only accurate for the default-resolution path; a
+        # caller injecting an explicit `provider=` that differs from the
+        # configured setting (tests only) still gets this label.
+        provider_label = get_settings().discovery_provider
 
         logger.info(
             "discovery started for icp_config_id=%s (industries=%s, geographies=%s, "
@@ -116,7 +124,7 @@ def run_discovery(
                 ),
                 session=session,
                 run_id=run_id,
-                provider="apollo",
+                provider=provider_label,
                 operation="discovery",
             )
             summary["pages_fetched"] += 1
@@ -167,7 +175,7 @@ def run_discovery(
                 session.add(
                     ProviderRecordORM(
                         account_id=resolved_account_id,
-                        provider="apollo",
+                        provider=provider_label,
                         operation="discovery",
                         payload=org.raw_payload,
                     )

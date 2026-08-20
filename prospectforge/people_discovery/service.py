@@ -81,6 +81,11 @@ def run_people_discovery(
     with log_context(run_id=str(run_id)):
         persona = load_persona_config(persona_id or get_settings().people_discovery_persona_id)
         active_provider = provider or get_default_person_discovery_provider()
+        # The actual configured provider, not a hardcoded "apollo" - same
+        # audit-trail mislabeling bug found and fixed at Step 26 across
+        # every csv/apollo-switchable stage (see discovery/service.py's
+        # comment for the full story).
+        provider_label = get_settings().people_discovery_provider
         criteria = PersonSearchCriteria(
             seniority_keywords=persona.seniority_keywords,
             department_keywords=persona.department_keywords,
@@ -122,7 +127,7 @@ def run_people_discovery(
                         session=session,
                         run_id=run_id,
                         account_id=account_orm.id,
-                        provider="apollo",
+                        provider=provider_label,
                         operation="people_discovery",
                     )
                 except (RetryableError, NonRetryableError) as exc:
@@ -139,7 +144,7 @@ def run_people_discovery(
                         session.add(
                             ProviderRecordORM(
                                 account_id=account_orm.id,
-                                provider="apollo",
+                                provider=provider_label,
                                 operation="people_discovery",
                                 payload={**person.raw_payload, "matched_rule": person.matched_rule},
                             )
@@ -165,7 +170,7 @@ def run_people_discovery(
                         ProviderRecordORM(
                             account_id=account_orm.id,
                             contact_id=contact_orm.id,
-                            provider="apollo",
+                            provider=provider_label,
                             operation="people_discovery",
                             payload={**person.raw_payload, "matched_rule": person.matched_rule},
                         )
@@ -186,7 +191,7 @@ def run_people_discovery(
                     session.add(
                         ProviderRecordORM(
                             account_id=account_orm.id,
-                            provider="apollo",
+                            provider=provider_label,
                             operation="people_discovery",
                             payload={"matched_count": 0, "total_entries_seen": page.total_entries},
                         )

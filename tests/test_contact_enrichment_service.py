@@ -1,6 +1,6 @@
 import uuid
 
-from app.orm import AccountORM, ContactORM, ProviderRecordORM, RunORM
+from app.orm import AccountORM, ContactORM, ExternalCallAttemptORM, ProviderRecordORM, RunORM
 from infra.retry import NonRetryableError
 from prospectforge.contact_enrichment.interface import ContactEnrichmentProvider, ContactEnrichmentResult
 from prospectforge.contact_enrichment.service import run_contact_enrichment
@@ -186,3 +186,20 @@ def test_raw_payload_persisted_as_provider_record(db_session):
         .one()
     )
     assert record.payload["email"] == "jane@example.com"
+
+
+def test_audit_trail_labels_the_actually_configured_provider_not_a_hardcoded_apollo(db_session):
+    """Step 26's finding - same fix as discovery/service.py's equivalent
+    test; see that test's docstring for the full story."""
+
+    run = _bare_run(db_session)
+    contact = _account_with_contact(db_session)
+    provider = _PerNameProvider({"Jane Doe": ContactEnrichmentResult(found=True, email="jane@example.com")})
+
+    run_contact_enrichment(run.id, db_session, provider=provider)
+
+    attempt = db_session.query(ExternalCallAttemptORM).filter_by(run_id=run.id).one()
+    assert attempt.provider == "csv"
+
+    record = db_session.query(ProviderRecordORM).filter_by(contact_id=contact.id).one()
+    assert record.provider == "csv"

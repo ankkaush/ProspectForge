@@ -1,6 +1,6 @@
 import uuid
 
-from app.orm import AccountORM, ContactORM, ProviderRecordORM, RunORM
+from app.orm import AccountORM, ContactORM, ExternalCallAttemptORM, ProviderRecordORM, RunORM
 from infra.retry import NonRetryableError
 from prospectforge.models import Account, Contact
 from prospectforge.models.enums import AccountStatus, RunStatus
@@ -186,3 +186,22 @@ def test_multiple_matching_contacts_are_all_persisted(db_session):
     assert summary["contacts_found"] == 2
     contacts = db_session.query(ContactORM).filter_by(account_id=account.id).all()
     assert {c.name for c in contacts} == {"Jane Doe", "Carlos Mendez"}
+
+
+def test_audit_trail_labels_the_actually_configured_provider_not_a_hardcoded_apollo(db_session):
+    """Step 26's finding - same fix as discovery/service.py's equivalent
+    test; see that test's docstring for the full story."""
+
+    run = _bare_run(db_session)
+    account = _researched_account(db_session)
+    provider = _PerDomainProvider(
+        {account.domain: PersonDiscoveryPage(people=[_person(account.id)], page=1, total_pages=1, total_entries=1)}
+    )
+
+    run_people_discovery(run.id, db_session, provider=provider)
+
+    attempt = db_session.query(ExternalCallAttemptORM).filter_by(run_id=run.id).one()
+    assert attempt.provider == "csv"
+
+    record = db_session.query(ProviderRecordORM).filter_by(operation="people_discovery").first()
+    assert record.provider == "csv"

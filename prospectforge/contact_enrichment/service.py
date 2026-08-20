@@ -72,6 +72,11 @@ def run_contact_enrichment(
 ) -> Dict[str, Any]:
     with log_context(run_id=str(run_id)):
         active_provider = provider or get_default_contact_enrichment_provider()
+        # The actual configured provider, not a hardcoded "apollo" - same
+        # audit-trail mislabeling bug found and fixed at Step 26 across
+        # every csv/apollo-switchable stage (see discovery/service.py's
+        # comment for the full story).
+        provider_label = get_settings().contact_enrichment_provider
 
         summary = {
             "evaluated": 0,
@@ -101,7 +106,7 @@ def run_contact_enrichment(
                         run_id=run_id,
                         account_id=contact_orm.account_id,
                         contact_id=contact_orm.id,
-                        provider="apollo",
+                        provider=provider_label,
                         operation="contact_enrichment",
                     )
                 except (RetryableError, NonRetryableError) as exc:
@@ -118,7 +123,7 @@ def run_contact_enrichment(
                     ProviderRecordORM(
                         account_id=contact_orm.account_id,
                         contact_id=contact_orm.id,
-                        provider="apollo",
+                        provider=provider_label,
                         operation="contact_enrichment",
                         payload=result.raw_payload,
                     )

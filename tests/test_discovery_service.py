@@ -9,7 +9,7 @@ data) so each test controls precisely what the "provider" returns.
 
 import uuid
 
-from app.orm import AccountORM, ProviderRecordORM, RunORM
+from app.orm import AccountORM, ExternalCallAttemptORM, ProviderRecordORM, RunORM
 from prospectforge.discovery.interface import (
     DiscoveredOrganization,
     DiscoveryCriteria,
@@ -171,3 +171,23 @@ def test_result_cap_stops_pagination_early(db_session):
     assert summary["pages_fetched"] == 1  # never fetched page 2
     assert summary["persisted_new"] == 2
     assert provider.calls == 1
+
+
+def test_audit_trail_labels_the_actually_configured_provider_not_a_hardcoded_apollo(db_session):
+    """Step 26's finding: this project's default (DISCOVERY_PROVIDER=csv,
+    per ADR-003's addendum) is the common case, but every
+    ExternalCallAttempt/ProviderRecord row was always labeled "apollo"
+    regardless - misleading for anyone reading the audit trail, and wrong
+    input to Step 22's per-provider failure-rate check. Fixed to read the
+    real setting."""
+
+    run = _bare_run(db_session)
+    provider = _ScriptedProvider([DiscoveryPage(organizations=[_org("a.com", "A")], page=1, total_pages=1, total_entries=1)])
+
+    run_discovery(run.id, "saas-fictional-v1", db_session, provider=provider)
+
+    attempt = db_session.query(ExternalCallAttemptORM).filter_by(run_id=run.id).one()
+    assert attempt.provider == "csv"  # the actual default, confirmed via conftest's environment
+
+    record = db_session.query(ProviderRecordORM).filter_by(operation="discovery").one()
+    assert record.provider == "csv"
